@@ -61,6 +61,9 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Install Playwright browsers (required for --browser mode)
+playwright install chromium
 ```
 
 ### 3. Configure LiteLLM
@@ -81,13 +84,25 @@ LITELLM_MODEL=openai/gpt-4o-mini
 
 ## Usage
 
-### Basic Usage
+### Browser Mode (Recommended for Anti-Bot Sites)
 
-Run the scraper with LLM normalization:
+Use a real browser to bypass anti-bot protection like Cloudflare:
+
+```bash
+python run_trial.py --browser
+```
+
+This uses Playwright/Chromium to render JavaScript and bypass 403 errors.
+
+### Basic Usage (HTTP Client)
+
+Run the scraper with standard HTTP client:
 
 ```bash
 python run_trial.py
 ```
+
+**Note:** May get blocked (403 Forbidden) on sites with anti-bot protection.
 
 ### Offline Mode
 
@@ -99,10 +114,10 @@ python run_trial.py --offline
 
 ### Save Fixture
 
-Fetch HTML and save it for future offline use:
+Fetch HTML with browser and save it for future offline use:
 
 ```bash
-python run_trial.py --save-fixture
+python run_trial.py --browser --save-fixture
 ```
 
 ## Output

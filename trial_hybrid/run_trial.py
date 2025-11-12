@@ -8,11 +8,12 @@ This script demonstrates the hybrid approach:
 3. Structured output to JSONL
 
 Usage:
-    python run_trial.py [--offline] [--save-fixture]
+    python run_trial.py [--offline] [--save-fixture] [--browser]
 
 Options:
     --offline       Use saved HTML fixture instead of fetching from web
     --save-fixture  Save fetched HTML to fixtures/ for offline testing
+    --browser       Use real browser (Playwright) to bypass anti-bot protection
 """
 import os
 import sys
@@ -31,6 +32,13 @@ from core.normalizer import normalize_item
 from core.llm import normalize_with_llm
 from core.validate import is_valid_news, validate_and_fix
 from schemas import NewsItem
+
+# Browser fetcher (optional - only imported if --browser flag is used)
+try:
+    from core.browser_fetcher import fetch_html_with_browser
+    BROWSER_AVAILABLE = True
+except ImportError:
+    BROWSER_AVAILABLE = False
 
 # Configuration
 URL = "https://www.moneycontrol.com/news/business/markets/page-1/"
@@ -107,14 +115,27 @@ async def main(args):
         if args.offline:
             print(f"  → Loading from fixture (offline mode)")
             html = load_fixture()
+        elif args.browser:
+            # Use browser-based fetching (Playwright)
+            if not BROWSER_AVAILABLE:
+                print(f"  ✗ Playwright not installed. Run: pip install playwright && playwright install chromium")
+                return 1
+            print(f"  → Using browser mode (Playwright)")
+            html = await fetch_html_with_browser(
+                URL,
+                save_fixture=args.save_fixture,
+                headless=True,
+                wait_for_selector="article, div[class*='news'], a"  # Wait for content
+            )
         else:
-            print(f"  → GET {URL}")
+            print(f"  → GET {URL} (HTTP client)")
             html = await fetch_html(URL, save_fixture=args.save_fixture)
             print(f"  ✓ Fetched {len(html)} characters")
             if args.save_fixture:
                 print(f"  ✓ Saved fixture for offline use")
     except Exception as e:
         print(f"  ✗ Fetch failed: {e}")
+        print(f"  💡 Tip: Try --browser flag to use real browser and bypass anti-bot")
         return 1
 
     # Step 2: Parse candidates
@@ -241,6 +262,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Hybrid Scraper v0.1 Trial")
     parser.add_argument("--offline", action="store_true", help="Use saved HTML fixture")
     parser.add_argument("--save-fixture", action="store_true", help="Save HTML fixture")
+    parser.add_argument("--browser", action="store_true", help="Use real browser (Playwright) to bypass anti-bot")
     args = parser.parse_args()
 
     try:

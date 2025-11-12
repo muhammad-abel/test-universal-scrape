@@ -8,12 +8,13 @@ This script demonstrates the hybrid approach:
 3. Structured output to JSONL
 
 Usage:
-    python run_trial.py [--offline] [--save-fixture] [--browser]
+    python run_trial.py [--offline] [--save-fixture] [--browser] [--visible]
 
 Options:
     --offline       Use saved HTML fixture instead of fetching from web
     --save-fixture  Save fetched HTML to fixtures/ for offline testing
     --browser       Use real browser (Playwright) to bypass anti-bot protection
+    --visible       Show browser window (for debugging, requires --browser)
 """
 import os
 import sys
@@ -124,7 +125,7 @@ async def main(args):
             html = await fetch_html_with_browser(
                 URL,
                 save_fixture=args.save_fixture,
-                headless=True,
+                headless=not args.visible,  # headless=False if --visible flag is set
                 wait_for_selector="article, div[class*='news'], a"  # Wait for content
             )
         else:
@@ -263,6 +264,7 @@ if __name__ == "__main__":
     parser.add_argument("--offline", action="store_true", help="Use saved HTML fixture")
     parser.add_argument("--save-fixture", action="store_true", help="Save HTML fixture")
     parser.add_argument("--browser", action="store_true", help="Use real browser (Playwright) to bypass anti-bot")
+    parser.add_argument("--visible", action="store_true", help="Show browser window (debug mode, requires --browser)")
     args = parser.parse_args()
 
     try:
